@@ -67,8 +67,8 @@ export const authOptions = {
       }
     }),
     LinkedInProvider({
-      clientId:  "77lazhzs5hii81",
-      clientSecret:  "WPL_AP1.h4dxWVC4Wup7fuCc.ZWxHOQ==",
+      clientId:  process.env.LINKEDIN_CLIENT_ID,
+      clientSecret:  process.env.LINKEDIN_CLIENT_SECRET ,
       authorization: {
         params: { scope: "openid profile email" },
       },
