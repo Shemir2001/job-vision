@@ -64,11 +64,11 @@ export default function HeroSection() {
       {/* Desktop Background Gradient */}
       <div className="hidden lg:block absolute inset-0 bg-gradient-to-br from-neutral-50 via-white to-primary-50/20 dark:from-neutral-900 dark:via-neutral-900 dark:to-neutral-800"></div>
 
-      {/* Main Hero Content */}
-      <div className="relative z-20 w-full py-12 sm:py-16 md:py-2 lg:py-0 lg:min-h-screen lg:flex lg:items-start">
+      {/* Main Hero Content — changed lg:items-start → lg:items-center */}
+      <div className="relative z-20 w-full py-12 sm:py-16 md:py-2 lg:py-1 lg:min-h-screen lg:flex lg:items-center">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10 w-full">
-          {/* Two Column Grid - Desktop Layout */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-10 md:gap-12 lg:gap-16 xl:gap-20 items-start  lg:min-h-screen lg:py-0">
+          {/* Two Column Grid — changed items-start → items-center */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-10 md:gap-12 lg:gap-16 xl:gap-20 items-center lg:min-h-screen lg:py-0">
             
             {/* Left Content Section - Always visible, optimized for mobile */}
             <motion.div
