@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server"
 import { fetchAllJobs } from "@/lib/job-apis"
+import connectDB from "@/lib/db"
+import Job from "@/lib/models/Job"
 
 export async function GET(request) {
   try {
@@ -12,10 +14,11 @@ export async function GET(request) {
     const type = searchParams.get('type') || ''
     const remote = searchParams.get('remote') === 'true'
     const experience = searchParams.get('experience') || ''
+    const featured = searchParams.get('featured') === 'true'
     const page = parseInt(searchParams.get('page')) || 1
     const limit = parseInt(searchParams.get('limit')) || 20
 
-    console.log('\n🔍 API Request:', { query, country, category, type, remote, experience, page, limit })
+    console.log('\n🔍 API Request:', { query, country, category, type, remote, experience, featured, page, limit })
 
     // Fetch jobs with API-level filters
     const result = await fetchAllJobs({
@@ -27,6 +30,69 @@ export async function GET(request) {
     let jobs = result.jobs || []
 
     console.log(`📦 Jobs from fetchAllJobs: ${jobs.length}`)
+
+    // Fetch manually added jobs from database
+    let manuallyAddedJobs = []
+    try {
+      await connectDB()
+
+      let dbQuery = { source: 'manual', isActive: true }
+
+      // Apply featured filter if requested
+      if (featured) {
+        dbQuery.isFeatured = true
+      }
+
+      // Apply search query
+      if (query) {
+        dbQuery.$or = [
+          { title: { $regex: query, $options: 'i' } },
+          { description: { $regex: query, $options: 'i' } },
+          { 'company.name': { $regex: query, $options: 'i' } }
+        ]
+      }
+
+      // Apply category filter
+      if (category && category !== 'all') {
+        dbQuery.category = category
+      }
+
+      // Apply country filter
+      if (country && country !== 'all') {
+        dbQuery['location.country'] = { $regex: country, $options: 'i' }
+      }
+
+      manuallyAddedJobs = await Job.find(dbQuery).lean().sort({ postedAt: -1 })
+      console.log(`📦 Jobs from Database (Manual): ${manuallyAddedJobs.length}`)
+    } catch (dbError) {
+      console.error('Error fetching from database:', dbError)
+      // Continue without database jobs if there's an error
+    }
+
+    // Merge manually added jobs with external API jobs
+    const formattedManualJobs = manuallyAddedJobs.map(job => ({
+      ...job,
+      externalId: job.externalId,
+      source: job.source
+    }))
+
+    // Combine both job sources and remove duplicates by externalId
+    const allJobs = [...jobs, ...formattedManualJobs]
+    const uniqueJobsMap = new Map()
+    allJobs.forEach(job => {
+      if (!uniqueJobsMap.has(job.externalId)) {
+        uniqueJobsMap.set(job.externalId, job)
+      }
+    })
+    jobs = Array.from(uniqueJobsMap.values())
+    // Sort by postedAt descending
+    jobs.sort((a, b) => {
+      const dateA = new Date(a.postedAt).getTime()
+      const dateB = new Date(b.postedAt).getTime()
+      return dateB - dateA
+    })
+
+    console.log(`📦 Total jobs after merging: ${jobs.length}`)
 
     // Apply additional filters on the backend
     

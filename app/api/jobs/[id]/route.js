@@ -1,21 +1,56 @@
 import { NextResponse } from "next/server"
 import { fetchRemotiveJobs, fetchArbeitnowJobs, fetchJSearchJobs } from "@/lib/job-apis"
+import connectDB from "@/lib/db"
+import Job from "@/lib/models/Job"
 
 export async function GET(request, { params }) {
   try {
     const { id } = await params
     const decodedId = decodeURIComponent(id)
-    
+
     console.log("Fetching job with ID:", decodedId)
-    
-    // Parse the source and original ID from the external ID
-    // Format: source_originalId (e.g., remotive_2086540, arbeitnow_job-slug, jsearch_abc123)
-    const [source, ...idParts] = decodedId.split('_')
-    const originalId = idParts.join('_') // Rejoin in case ID contains underscores
-    
+
     let job = null
-    
-    if (source === 'remotive') {
+
+    // First, try to fetch by MongoDB _id (for manual jobs)
+    try {
+      await connectDB()
+      // Check if id looks like a MongoDB ObjectId (24 hex characters)
+      if (decodedId.match(/^[0-9a-f]{24}$/i)) {
+        job = await Job.findById(decodedId).lean()
+        if (job) {
+          return NextResponse.json({ job })
+        }
+      }
+    } catch (e) {
+      console.error('Error fetching by MongoDB _id:', e)
+    }
+
+    // Parse the source and original ID from the external ID
+    // Format: source_originalId or source-originalId (e.g., remotive_2086540, manual_1234_abc, arbeitnow_job-slug, jsearch_abc123)
+    let source, originalId
+    if (decodedId.includes('_')) {
+      const parts = decodedId.split('_')
+      source = parts[0]
+      originalId = parts.slice(1).join('_')
+    } else if (decodedId.includes('-')) {
+      const parts = decodedId.split('-')
+      source = parts[0]
+      originalId = parts.slice(1).join('-')
+    } else {
+      source = decodedId
+      originalId = ''
+    }
+
+    if (source === 'manual') {
+      // Fetch manually added job from database by externalId
+      try {
+        await connectDB()
+        job = await Job.findOne({ externalId: decodedId, source: 'manual' }).lean()
+      } catch (dbError) {
+        console.error('Error fetching manual job from database:', dbError)
+      }
+    } else if (source === 'remotive') {
       // Fetch from Remotive API and find the specific job
       const result = await fetchRemotiveJobs({ limit: 200 })
       job = result.jobs?.find(j => {

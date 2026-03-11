@@ -44,74 +44,12 @@ const statusConfig = {
   withdrawn: { label: 'Withdrawn', color: 'bg-neutral-100 text-neutral-700', icon: XCircle },
 }
 
-// Mock applications data
-const mockApplications = [
-  {
-    id: '1',
-    job: {
-      title: 'Senior Software Engineer',
-      company: { name: 'TechCorp Inc', logo: null },
-      location: { city: 'San Francisco', country: 'USA', isRemote: true }
-    },
-    status: 'interview',
-    appliedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
-    aiMatchScore: 85,
-    interviews: [{ scheduledAt: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000), type: 'video' }]
-  },
-  {
-    id: '2',
-    job: {
-      title: 'Frontend Developer',
-      company: { name: 'StartupXYZ', logo: null },
-      location: { city: 'New York', country: 'USA', isRemote: false }
-    },
-    status: 'viewed',
-    appliedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
-    aiMatchScore: 78,
-    viewedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000)
-  },
-  {
-    id: '3',
-    job: {
-      title: 'Full Stack Developer',
-      company: { name: 'BigCo', logo: null },
-      location: { city: 'Remote', country: 'Worldwide', isRemote: true }
-    },
-    status: 'applied',
-    appliedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-    aiMatchScore: 72
-  },
-  {
-    id: '4',
-    job: {
-      title: 'React Developer',
-      company: { name: 'Innovation Labs', logo: null },
-      location: { city: 'London', country: 'UK', isRemote: true }
-    },
-    status: 'offered',
-    appliedAt: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000),
-    aiMatchScore: 92,
-    offeredAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000)
-  },
-  {
-    id: '5',
-    job: {
-      title: 'Backend Engineer',
-      company: { name: 'DataSystems', logo: null },
-      location: { city: 'Berlin', country: 'Germany', isRemote: false }
-    },
-    status: 'rejected',
-    appliedAt: new Date(Date.now() - 21 * 24 * 60 * 60 * 1000),
-    aiMatchScore: 65,
-    rejectedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-  },
-]
 
 export default function ApplicationsPage() {
   const { data: session, status: authStatus } = useSession()
   const router = useRouter()
-  const [applications, setApplications] = useState(mockApplications)
-  const [loading, setLoading] = useState(false)
+  const [applications, setApplications] = useState([])
+  const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('all')
   const [search, setSearch] = useState('')
 
@@ -120,6 +58,30 @@ export default function ApplicationsPage() {
       router.push('/auth/login?callbackUrl=/dashboard/applications')
     }
   }, [authStatus, router])
+
+  // Fetch real applications data from API
+  useEffect(() => {
+    const fetchApplications = async () => {
+      try {
+        setLoading(true)
+        const response = await fetch('/api/jobs/apply')
+        if (!response.ok) {
+          throw new Error('Failed to fetch applications')
+        }
+        const data = await response.json()
+        setApplications(data.applications || [])
+      } catch (error) {
+        console.error('Error fetching applications:', error)
+        setApplications([])
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    if (authStatus === 'authenticated') {
+      fetchApplications()
+    }
+  }, [authStatus])
 
   if (authStatus === 'loading' || !session) {
     return (
@@ -230,7 +192,7 @@ export default function ApplicationsPage() {
               {filteredApplications.map((app, index) => {
                 const status = statusConfig[app.status]
                 return (
-                  <Card key={app.id} className="hover:shadow-md transition-shadow">
+                  <Card key={app._id} className="hover:shadow-md transition-shadow">
                     <CardContent className="p-6">
                       <div className="flex flex-col md:flex-row md:items-center gap-4">
                         {/* Company Logo */}
@@ -316,12 +278,12 @@ export default function ApplicationsPage() {
 
                         {/* Actions */}
                         <div className="flex md:flex-col gap-2">
-                          <Link href={`/jobs/${app.id}`}>
+                          <Link href={`/jobs/${app.job._id}`}>
                             <Button variant="outline" size="sm" className="w-full">
                               View Job
                             </Button>
                           </Link>
-                          <Link href={`/ai/interview-prep?job=${app.id}`}>
+                          <Link href={`/ai/interview-prep?job=${app.job._id}`}>
                             <Button variant="outline" size="sm" className="w-full">
                               <MessageSquare className="h-4 w-4 mr-1" />
                               Prep

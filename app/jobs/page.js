@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, Suspense } from 'react'
+import { useState, useEffect, Suspense, useRef, useCallback } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { 
@@ -45,13 +45,17 @@ function JobsContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { isJobSaved, toggleSaveJob, loading: savedJobsLoading } = useSavedJobs()
-  
+
   const [jobs, setJobs] = useState([])
   const [loading, setLoading] = useState(true)
   const [totalResults, setTotalResults] = useState(0)
   const [totalPages, setTotalPages] = useState(1)
   const [showFilters, setShowFilters] = useState(false)
   const [savingJobId, setSavingJobId] = useState(null)
+
+  // Refs for intersection observer
+  const observerRef = useRef(null)
+  const jobCardRefsRef = useRef({})
 
   // Filter states
   const [query, setQuery] = useState(searchParams.get('q') || '')
@@ -63,6 +67,34 @@ function JobsContent() {
   const [salaryRange, setSalaryRange] = useState([0, 200000])
   const [page, setPage] = useState(parseInt(searchParams.get('page')) || 1)
   const [sortBy, setSortBy] = useState('date')
+
+  /**
+   * Initialize sessionStorage for tracking viewed jobs in current session
+   * This prevents duplicate impressions from the same user in the same session
+   */
+  const getSessionViewedJobs = () => {
+    try {
+      const viewed = sessionStorage.getItem('viewedJobs')
+      return viewed ? new Set(JSON.parse(viewed)) : new Set()
+    } catch (error) {
+      console.error('Error reading sessionStorage:', error)
+      return new Set()
+    }
+  }
+
+  const addToSessionViewedJobs = (jobId) => {
+    try {
+      const viewed = getSessionViewedJobs()
+      viewed.add(jobId)
+      sessionStorage.setItem('viewedJobs', JSON.stringify(Array.from(viewed)))
+    } catch (error) {
+      console.error('Error writing to sessionStorage:', error)
+    }
+  }
+
+  const isJobViewedInSession = (jobId) => {
+    return getSessionViewedJobs().has(jobId)
+  }
 
   useEffect(() => {
     fetchJobs()
@@ -83,16 +115,125 @@ function JobsContent() {
 
       const response = await fetch(`/api/jobs?${params}`)
       const data = await response.json()
-      
+
       setJobs(data.jobs || [])
       setTotalResults(data.totalResults || 0)
       setTotalPages(data.totalPages || 1)
+      jobCardRefsRef.current = {}
     } catch (error) {
       console.error('Error fetching jobs:', error)
     } finally {
       setLoading(false)
     }
   }
+
+  /**
+   * Track job impression when card enters viewport
+   * - Uses sessionStorage to prevent duplicate impressions in same session
+   * - Debounced to prevent rapid API calls
+   */
+  const trackJobImpression = useCallback(async (jobId, jobSource = 'manual') => {
+    try {
+      // Check if job has already been viewed in this session
+      if (isJobViewedInSession(jobId)) {
+        return
+      }
+
+      // Mark as viewed in sessionStorage
+      addToSessionViewedJobs(jobId)
+
+      // Send impression to the increment endpoint
+      // This atomically increments the impressions count on the Job document
+      const response = await fetch('/api/jobs/increment-impression', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jobId,
+          jobSource,
+          type: 'view',
+          source: 'listing',
+          searchQuery: query || undefined
+        })
+      })
+
+      if (!response.ok) {
+        console.error('Failed to track impression:', response.status)
+      }
+    } catch (error) {
+      console.error('Error tracking impression:', error)
+    }
+  }, [query])
+
+  /**
+   * Setup IntersectionObserver for job cards
+   * Detects when a card enters the viewport and tracks the impression
+   */
+  useEffect(() => {
+    // Create observer once
+    if (!observerRef.current) {
+      observerRef.current = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            // Track when card becomes visible (threshold met)
+            if (entry.isIntersecting) {
+              const jobId = entry.target.getAttribute('data-job-id')
+              const jobSource = entry.target.getAttribute('data-job-source') || 'manual'
+              
+              if (jobId) {
+                // Small delay to ensure card is truly visible
+                setTimeout(() => {
+                  trackJobImpression(jobId, jobSource)
+                }, 100)
+              }
+            }
+          })
+        },
+        {
+          threshold: 0.1, // Trigger when at least 10% of the card is visible
+          rootMargin: '100px' // Start detecting 100px before/after viewport
+        }
+      )
+    }
+
+    return () => {
+      // Don't disconnect on unmount - keep observer running
+    }
+  }, [trackJobImpression])
+
+  /**
+   * Attach/detach observers when jobs list changes
+   */
+  useEffect(() => {
+    if (!observerRef.current || !jobs.length) return
+
+    // Small delay to ensure refs are properly set
+    const timer = setTimeout(() => {
+      Object.entries(jobCardRefsRef.current).forEach(([jobId, ref]) => {
+        if (ref && observerRef.current) {
+          try {
+            observerRef.current.observe(ref)
+          } catch (error) {
+            console.error('Error observing element:', error)
+          }
+        }
+      })
+    }, 0)
+
+    return () => clearTimeout(timer)
+  }, [jobs])
+
+  // Cleanup observer on component unmount
+  useEffect(() => {
+    return () => {
+      if (observerRef.current) {
+        try {
+          observerRef.current.disconnect()
+        } catch (error) {
+          console.error('Error disconnecting observer:', error)
+        }
+      }
+    }
+  }, [])
 
   const handleSearch = (e) => {
     e.preventDefault()
@@ -353,15 +494,41 @@ function JobsContent() {
               </div>
             ) : jobs.length > 0 ? (
               <div className="space-y-4">
-                {jobs.map((job, index) => (
-                  <motion.div
-                    key={job.externalId || index}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.05 }}
-                  >
-                    <Link href={`/jobs/${encodeURIComponent(job.externalId || index)}`}>
-                      <Card className="job-card hover:border-primary-200 cursor-pointer">
+                {jobs.map((job, index) => {
+                  const jobId = job._id || job.externalId
+                  return (
+                    <motion.div
+                      key={jobId || index}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.05 }}
+                      ref={(ref) => {
+                        if (ref) jobCardRefsRef.current[jobId] = ref
+                      }}
+                      data-job-id={jobId}
+                      data-job-source={job.source || 'manual'}
+                    >
+                      <Link
+                        href={`/jobs/${encodeURIComponent(job.source === 'manual' && job._id ? job._id : job.externalId || index)}`}
+                        onClick={async () => {
+                          // Track click impression
+                          try {
+                            await fetch('/api/jobs/impressions', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({
+                                jobId,
+                                type: 'click',
+                                source: 'listing',
+                                jobSource: job.source || 'manual'
+                              })
+                            })
+                          } catch (error) {
+                            console.error('Error tracking click:', error)
+                          }
+                        }}
+                      >
+                        <Card className="job-card hover:border-primary-200 cursor-pointer">
                         <CardContent className="p-6">
                           <div className="flex items-start gap-4">
                             <div className="w-14 h-14 rounded-xl bg-neutral-100 flex items-center justify-center flex-shrink-0 overflow-hidden">
@@ -438,7 +605,8 @@ function JobsContent() {
                       </Card>
                     </Link>
                   </motion.div>
-                ))}
+                  )
+                })}
               </div>
             ) : (
               <div className="text-center py-20 bg-white rounded-xl">

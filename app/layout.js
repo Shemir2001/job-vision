@@ -2,10 +2,9 @@ import { DM_Sans } from 'next/font/google'
 import './globals.css'
 import { Toaster } from '@/components/ui/toaster'
 import Providers from '@/components/providers'
-import Header from '@/components/layout/Header'
-import Footer from '@/components/layout/Footer'
+import LayoutWrapper from '@/components/layout/LayoutWrapper'
 
-const dmSans = DM_Sans({ 
+const dmSans = DM_Sans({
   subsets: ['latin'],
   weight: ['400', '500', '600', '700', '800'],
   variable: '--font-dm-sans',
@@ -27,13 +26,7 @@ export default function RootLayout({ children }) {
     <html lang="en" suppressHydrationWarning>
       <body className={`${dmSans.variable} font-sans antialiased`}>
         <Providers>
-          <div className="flex flex-col min-h-screen">
-            <Header />
-            <main className="flex-1">
-              {children}
-            </main>
-            <Footer />
-          </div>
+          <LayoutWrapper>{children}</LayoutWrapper>
           <Toaster />
         </Providers>
       </body>

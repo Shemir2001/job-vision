@@ -4,12 +4,12 @@ import { useState, useEffect } from 'react'
 
 import { useParams, useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { 
-  ArrowLeft, 
-  MapPin, 
-  Building, 
-  Clock, 
-  DollarSign, 
+import {
+  ArrowLeft,
+  MapPin,
+  Building,
+  Clock,
+  DollarSign,
   Bookmark,
   Share2,
   ExternalLink,
@@ -34,6 +34,13 @@ import Link from 'next/link'
 import { useSession } from 'next-auth/react'
 import { toast } from 'sonner'
 import { BookmarkCheck } from 'lucide-react'
+
+// Helper function to ensure URL is absolute
+const ensureAbsoluteUrl = (url) => {
+  if (!url) return '#'
+  if (url.match(/^https?:\/\//i)) return url
+  return 'https://' + url
+}
 export default function JobDetailPage() {
   const params = useParams()
   const router = useRouter()
@@ -48,15 +55,35 @@ const [saving, setSaving] = useState(false)
     fetchJob()
   }, [params.id])
 
+  const trackImpression = async (type = 'view', source = 'direct', jobSource = 'manual') => {
+    try {
+      const jobId = params.id
+      await fetch('/api/jobs/impressions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jobId,
+          type,
+          source,
+          jobSource
+        })
+      })
+    } catch (error) {
+      console.error('Error tracking impression:', error)
+    }
+  }
+
   const fetchJob = async () => {
     setLoading(true)
     try {
       // Fetch specific job by ID
       const response = await fetch(`/api/jobs/${encodeURIComponent(params.id)}`)
       const data = await response.json()
-      
+
       if (response.ok && data.job) {
         setJob(data.job)
+        // Track impression when job detail is viewed
+        trackImpression('click', 'detail_page', data.job.source || 'manual')
       } else {
         console.error('Job not found:', data.error)
       }
@@ -335,6 +362,18 @@ const handleSaveJob = async () => {
                           <Clock className="h-4 w-4" />
                           Posted {formatRelativeTime(job.postedAt)}
                         </div>
+                        {job.workArrangement && job.workArrangement !== 'onsite' && (
+                          <div className="flex items-center gap-1.5">
+                            <Globe className="h-4 w-4" />
+                            {job.workArrangement.charAt(0).toUpperCase() + job.workArrangement.slice(1)}
+                          </div>
+                        )}
+                        {job.applicationDeadline && (
+                          <div className="flex items-center gap-1.5">
+                            <Clock className="h-4 w-4" />
+                            Deadline: {new Date(job.applicationDeadline).toLocaleDateString()}
+                          </div>
+                        )}
                       </div>
 
                       <div className="flex flex-wrap gap-2 mt-4">
@@ -346,7 +385,7 @@ const handleSaveJob = async () => {
                   </div>
 
                   <div className="flex flex-wrap gap-3 mt-6 pt-6 border-t">
-                    <a href={job.applyUrl} target="_blank" rel="noopener noreferrer">
+                    <a href={ensureAbsoluteUrl(job.applyUrl)} target="_blank" rel="noopener noreferrer">
                       <Button size="lg" className="gap-2">
                         Apply Now
                         <ExternalLink className="h-4 w-4" />
@@ -485,12 +524,62 @@ const handleSaveJob = async () => {
               </motion.div>
             )}
 
+            {/* Responsibilities */}
+            {job.responsibilities?.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+              >
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Responsibilities</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ul className="space-y-2">
+                      {job.responsibilities.map((resp, index) => (
+                        <li key={index} className="flex items-start gap-2">
+                          <Briefcase className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                          <span>{resp}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )}
+
+            {/* Benefits */}
+            {job.benefits?.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.35 }}
+              >
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Benefits</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ul className="space-y-2">
+                      {job.benefits.map((benefit, index) => (
+                        <li key={index} className="flex items-start gap-2">
+                          <CheckCircle className="h-5 w-5 text-emerald-600 flex-shrink-0 mt-0.5" />
+                          <span>{benefit}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )}
+
             {/* Skills */}
             {job.skills?.length > 0 && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
+                transition={{ delay: 0.4 }}
               >
                 <Card>
                   <CardHeader>
@@ -508,6 +597,148 @@ const handleSaveJob = async () => {
                 </Card>
               </motion.div>
             )}
+
+            {/* Category and Subcategory */}
+            {(job.category || job.subcategory) && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.45 }}
+              >
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Job Category</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {job.category && (
+                        <div>
+                          <p className="text-sm font-medium text-neutral-700 mb-1">Category</p>
+                          <Badge variant="secondary">{job.category}</Badge>
+                        </div>
+                      )}
+                      {job.subcategory && (
+                        <div>
+                          <p className="text-sm font-medium text-neutral-700 mb-1">Subcategory</p>
+                          <Badge variant="secondary">{job.subcategory}</Badge>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )}
+
+            {/* Location Details */}
+            {(job.location?.state || job.location?.address) && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 }}
+              >
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <MapPin className="h-5 w-5" />
+                      Location Details
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {job.location?.city && (
+                        <div>
+                          <p className="text-sm font-medium text-neutral-700 mb-1">City</p>
+                          <p className="text-neutral-600">{job.location.city}</p>
+                        </div>
+                      )}
+                      {job.location?.state && (
+                        <div>
+                          <p className="text-sm font-medium text-neutral-700 mb-1">State/Province</p>
+                          <p className="text-neutral-600">{job.location.state}</p>
+                        </div>
+                      )}
+                      {job.location?.country && (
+                        <div>
+                          <p className="text-sm font-medium text-neutral-700 mb-1">Country</p>
+                          <p className="text-neutral-600">{job.location.country}</p>
+                        </div>
+                      )}
+                      {job.location?.address && (
+                        <div>
+                          <p className="text-sm font-medium text-neutral-700 mb-1">Address</p>
+                          <p className="text-neutral-600">{job.location.address}</p>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )}
+
+            {/* Additional Job Information */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.55 }}
+            >
+              <Card>
+                <CardHeader>
+                  <CardTitle>Additional Information</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {job.type && (
+                      <div>
+                        <p className="text-sm font-medium text-neutral-700 mb-1">Job Type</p>
+                        <p className="text-neutral-600 capitalize">{job.type}</p>
+                      </div>
+                    )}
+                    {job.experienceLevel && (
+                      <div>
+                        <p className="text-sm font-medium text-neutral-700 mb-1">Experience Level</p>
+                        <p className="text-neutral-600 capitalize">{job.experienceLevel}</p>
+                      </div>
+                    )}
+                    {job.workArrangement && (
+                      <div>
+                        <p className="text-sm font-medium text-neutral-700 mb-1">Work Arrangement</p>
+                        <p className="text-neutral-600 capitalize">{job.workArrangement}</p>
+                      </div>
+                    )}
+                    {(job.salary?.min || job.salary?.max) && (
+                      <div>
+                        <p className="text-sm font-medium text-neutral-700 mb-1">Salary Details</p>
+                        <div className="space-y-1 text-neutral-600">
+                          {job.salary?.min && <p>Min: ${job.salary.min.toLocaleString()} {job.salary.currency}</p>}
+                          {job.salary?.max && <p>Max: ${job.salary.max.toLocaleString()} {job.salary.currency}</p>}
+                          {job.salary?.period && <p>Period: {job.salary.period}</p>}
+                        </div>
+                      </div>
+                    )}
+                    {job.applicationDeadline && (
+                      <div>
+                        <p className="text-sm font-medium text-neutral-700 mb-1">Application Deadline</p>
+                        <p className="text-neutral-600">{new Date(job.applicationDeadline).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                      </div>
+                    )}
+                    {job.applyUrl && (
+                      <div>
+                        <p className="text-sm font-medium text-neutral-700 mb-1">Application Link</p>
+                        <a
+                          href={ensureAbsoluteUrl(job.applyUrl)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-primary-600 hover:underline break-all text-sm flex items-center gap-1"
+                        >
+                          {job.applyUrl}
+                          <ExternalLink className="h-3 w-3" />
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
           </div>
 
           {/* Sidebar */}
@@ -523,7 +754,7 @@ const handleSaveJob = async () => {
                   <CardTitle>Quick Actions</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <a href={job.applyUrl} target="_blank" rel="noopener noreferrer" className="block">
+                  <a href={ensureAbsoluteUrl(job.applyUrl)} target="_blank" rel="noopener noreferrer" className="block">
                     <Button className="w-full gap-2">
                       Apply Now
                       <ExternalLink className="h-4 w-4" />

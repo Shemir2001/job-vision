@@ -29,24 +29,24 @@
   }
 
   .dark {
-    --background: 0 0% 4%;
-    --foreground: 0 0% 98%;
-    --card: 0 0% 7%;
-    --card-foreground: 0 0% 98%;
-    --popover: 0 0% 7%;
-    --popover-foreground: 0 0% 98%;
+    --background: 222 84% 5%;
+    --foreground: 213 31% 91%;
+    --card: 222 84% 8%;
+    --card-foreground: 213 31% 91%;
+    --popover: 222 84% 8%;
+    --popover-foreground: 213 31% 91%;
     --primary: 217 91% 60%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 0 0% 15%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 15%;
-    --muted-foreground: 0 0% 64%;
-    --accent: 0 0% 15%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62% 30%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 15%;
-    --input: 0 0% 15%;
+    --primary-foreground: 222 84% 5%;
+    --secondary: 220 13% 20%;
+    --secondary-foreground: 213 31% 91%;
+    --muted: 217 32% 17%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 220 13% 20%;
+    --accent-foreground: 213 31% 91%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 213 31% 91%;
+    --border: 220 13% 20%;
+    --input: 220 13% 20%;
     --ring: 217 91% 60%;
   }
 }
@@ -57,6 +57,15 @@
   }
   body {
     @apply bg-background text-foreground font-sans antialiased;
+  }
+
+  /* Smooth transitions for theme switching */
+  html.dark {
+    color-scheme: dark;
+  }
+
+  html.light {
+    color-scheme: light;
   }
 }
 
@@ -78,12 +87,12 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: hsl(var(--muted-foreground) / 0.3);
+  background: hsl(var(--muted-foreground) / 0.4);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--muted-foreground) / 0.5);
+  background: hsl(var(--muted-foreground) / 0.6);
 }
 
 /* Animated blob */
@@ -117,6 +126,10 @@
 .job-card:hover {
   transform: translateY(-4px);
   box-shadow: 0 12px 40px -12px rgba(0, 0, 0, 0.15);
+}
+
+.dark .job-card:hover {
+  box-shadow: 0 12px 40px -12px rgba(0, 0, 0, 0.4);
 }
 
 /* Smooth page transitions */
@@ -154,6 +167,75 @@
   100% {
     background-position: -200% 0;
   }
+}
+
+/* Ensure proper contrast in dark mode for common elements */
+.dark input[type="text"],
+.dark input[type="email"],
+.dark input[type="password"],
+.dark input[type="search"],
+.dark textarea,
+.dark select {
+  @apply bg-card text-foreground border-border;
+}
+
+.dark input[type="text"]::placeholder,
+.dark input[type="email"]::placeholder,
+.dark input[type="password"]::placeholder,
+.dark input[type="search"]::placeholder,
+.dark textarea::placeholder {
+  @apply text-muted-foreground;
+}
+
+/* Dark mode specific button styles */
+.dark button {
+  transition: all 0.2s ease;
+}
+
+/* Dark mode links */
+.dark a {
+  color: hsl(var(--primary));
+}
+
+.dark a:hover {
+  opacity: 0.8;
+}
+
+/* Ensure dark mode works for all text elements */
+.dark h1,
+.dark h2,
+.dark h3,
+.dark h4,
+.dark h5,
+.dark h6,
+.dark p,
+.dark span {
+  color: hsl(var(--foreground));
+}
+
+/* Card styling in dark mode */
+.dark [class*="bg-white"] {
+  @apply bg-card;
+}
+
+/* Better dark mode for backgrounds */
+.dark .bg-gray-50,
+.dark .bg-gray-100 {
+  @apply bg-card;
+}
+
+/* Ensure labels and text are readable */
+.dark label {
+  @apply text-foreground;
+}
+
+/* Dark mode for tables */
+.dark table {
+  @apply bg-card;
+}
+
+.dark thead {
+  @apply bg-secondary;
 }
 
 

@@ -6,20 +6,21 @@ import Link from 'next/link'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { useSession, signOut } from 'next-auth/react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { 
-  Briefcase, 
-  Menu, 
-  X, 
-  User, 
-  LogOut, 
-  Settings, 
-  FileText, 
+import {
+  Briefcase,
+  Menu,
+  X,
+  User,
+  LogOut,
+  Settings,
+  FileText,
   BookmarkIcon,
   Brain,
   ChevronDown,
   ChevronRight,
   GraduationCap,
-  Sparkles
+  Sparkles,
+  Newspaper
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -36,8 +37,9 @@ import { getInitials } from '@/lib/utils'
 const navLinks = [
   { href: '/jobs', label: 'Find Jobs', icon: Briefcase },
   { href: '/internships', label: 'Internships', icon: GraduationCap },
-  { 
-    label: 'AI Tools', 
+  { href: '/blog', label: 'Blog', icon: Newspaper },
+  {
+    label: 'AI Tools',
     icon: Brain,
     children: [
       { href: '/ai/cv-analyzer', label: 'CV Analyzer', description: 'Get your resume analyzed by AI' },
@@ -278,8 +280,7 @@ export default function Header() {
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
               transition={{ type: 'spring', stiffness: 320, damping: 32 }}
-              className="fixed top-0 left-0 z-[70] h-full w-[78vw] max-w-[320px] shadow-2xl lg:hidden flex flex-col"
-              style={{ backgroundColor: '#ffffff' }}
+              className="fixed top-0 left-0 z-[70] h-full w-[78vw] max-w-[320px] shadow-2xl lg:hidden flex flex-col bg-background dark:bg-card"
             >
               {/* Drawer Header */}
               <div className="flex items-center justify-between px-5 py-4 border-b">

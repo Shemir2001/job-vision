@@ -37,7 +37,7 @@ export default function HowItWorks() {
   const isInView = useInView(ref, { once: true, amount: 0.2 })
 
   return (
-    <section className="py-20 bg-neutral-50" ref={ref}>
+    <section className="py-20 bg-neutral-50 dark:bg-secondary" ref={ref}>
       <div className="container mx-auto px-4">
         {/* Section Header */}
         <motion.div
@@ -46,10 +46,10 @@ export default function HowItWorks() {
           animate={isInView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.5 }}
         >
-          <h2 className="text-3xl md:text-4xl font-bold text-neutral-900 mb-4">
+          <h2 className="text-3xl md:text-4xl font-bold text-neutral-900 dark:text-foreground mb-4">
             How It Works
           </h2>
-          <p className="text-lg text-neutral-600 max-w-2xl mx-auto">
+          <p className="text-lg text-neutral-600 dark:text-muted-foreground max-w-2xl mx-auto">
             Finding your dream job has never been easier. Follow these simple steps to get started.
           </p>
         </motion.div>
@@ -66,12 +66,12 @@ export default function HowItWorks() {
             >
               {/* Connector Line */}
               {index < steps.length - 1 && (
-                <div className="hidden lg:block absolute top-10 left-[60%] w-[80%] h-0.5 bg-neutral-200" />
+                <div className="hidden lg:block absolute top-10 left-[60%] w-[80%] h-0.5 bg-neutral-200 dark:bg-border" />
               )}
 
-              <div className="bg-white rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow relative">
+              <div className="bg-white dark:bg-card rounded-2xl p-6 shadow-sm hover:shadow-md dark:hover:shadow-lg transition-shadow relative">
                 {/* Step Number */}
-                <div className="absolute -top-3 -left-3 w-8 h-8 bg-white rounded-full shadow-md flex items-center justify-center text-sm font-bold text-neutral-600">
+                <div className="absolute -top-3 -left-3 w-8 h-8 bg-white dark:bg-card rounded-full shadow-md dark:shadow-lg flex items-center justify-center text-sm font-bold text-neutral-600 dark:text-muted-foreground">
                   {index + 1}
                 </div>
 
@@ -81,10 +81,10 @@ export default function HowItWorks() {
                 </div>
 
                 {/* Content */}
-                <h3 className="text-lg font-semibold text-neutral-900 mb-2">
+                <h3 className="text-lg font-semibold text-neutral-900 dark:text-foreground mb-2">
                   {step.title}
                 </h3>
-                <p className="text-neutral-600 text-sm">
+                <p className="text-neutral-600 dark:text-muted-foreground text-sm">
                   {step.description}
                 </p>
               </div>

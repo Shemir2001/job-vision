@@ -1,12 +1,21 @@
 "use client"
 
 import { SessionProvider } from "next-auth/react"
+import { ThemeProvider } from "next-themes"
 
 export default function Providers({ children }) {
   return (
-    <SessionProvider>
-      {children}
-    </SessionProvider>
+    <ThemeProvider
+      attribute="class"
+      defaultTheme="system"
+      enableSystem
+      disableTransitionOnChange
+      storageKey="jobportal-theme"
+    >
+      <SessionProvider>
+        {children}
+      </SessionProvider>
+    </ThemeProvider>
   )
 }
 

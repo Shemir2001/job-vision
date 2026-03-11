@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import connectDB from "@/lib/db"
 import User from "@/lib/models/User"
+import { createAdminNotification, getAllAdminIds } from "@/lib/notification-utils"
 
 export async function POST(request) {
   try {
@@ -55,6 +56,30 @@ export async function POST(request) {
 
     await user.save()
     console.log("User created successfully:", user._id)
+
+    // Notify admins about new user registration
+    try {
+      const adminIds = await getAllAdminIds()
+      adminIds.forEach(adminId => {
+        createAdminNotification(adminId, {
+          type: 'new_user',
+          title: 'New User Registration',
+          message: `${name} (${email}) has signed up`,
+          reference: {
+            model: 'User',
+            id: user._id
+          },
+          data: {
+            userId: user._id,
+            userName: name,
+            userEmail: email
+          }
+        })
+      })
+    } catch (notificationError) {
+      console.error('Error creating notification:', notificationError)
+      // Don't fail registration if notification fails
+    }
 
     return NextResponse.json({
       success: true,

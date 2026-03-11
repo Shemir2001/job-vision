@@ -51,7 +51,7 @@ export default function StatsSection() {
   const isInView = useInView(ref, { once: true, amount: 0.3 })
 
   return (
-    <section className="py-16 bg-white border-y" ref={ref}>
+    <section className="py-16 bg-white dark:bg-card border-y dark:border-border" ref={ref}>
       <div className="container mx-auto px-4">
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8">
           {stats.map((stat, index) => (
@@ -62,13 +62,13 @@ export default function StatsSection() {
               animate={isInView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.5, delay: index * 0.1 }}
             >
-              <div className={`inline-flex p-3 rounded-xl bg-neutral-100 mb-3 ${stat.color}`}>
+              <div className={`inline-flex p-3 rounded-xl bg-neutral-100 dark:bg-secondary mb-3 ${stat.color}`}>
                 <stat.icon className="h-6 w-6" />
               </div>
-              <div className="text-3xl md:text-4xl font-bold text-neutral-900 mb-1">
+              <div className="text-3xl md:text-4xl font-bold text-neutral-900 dark:text-foreground mb-1">
                 <AnimatedCounter value={stat.value} suffix={stat.suffix} inView={isInView} />
               </div>
-              <div className="text-sm text-neutral-500">{stat.label}</div>
+              <div className="text-sm text-neutral-500 dark:text-muted-foreground">{stat.label}</div>
             </motion.div>
           ))}
         </div>

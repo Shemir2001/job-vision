@@ -39,7 +39,7 @@ export default function PopularCategories() {
   const isInView = useInView(ref, { once: true, amount: 0.1 })
 
   return (
-    <section className="py-20 bg-neutral-50" ref={ref}>
+    <section className="py-20 bg-neutral-50 dark:bg-secondary" ref={ref}>
       <div className="container mx-auto px-4">
         {/* Section Header */}
         <motion.div
@@ -48,10 +48,10 @@ export default function PopularCategories() {
           animate={isInView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.5 }}
         >
-          <h2 className="text-3xl md:text-4xl font-bold text-neutral-900 mb-4">
+          <h2 className="text-3xl md:text-4xl font-bold text-neutral-900 dark:text-foreground mb-4">
             Popular Categories
           </h2>
-          <p className="text-lg text-neutral-600 max-w-2xl mx-auto">
+          <p className="text-lg text-neutral-600 dark:text-muted-foreground max-w-2xl mx-auto">
             Explore opportunities across various industries and find your perfect career path
           </p>
         </motion.div>
@@ -66,14 +66,14 @@ export default function PopularCategories() {
               transition={{ duration: 0.5, delay: index * 0.05 }}
             >
               <Link href={category.href}>
-                <div className="group bg-white rounded-xl p-5 shadow-sm hover:shadow-md transition-all hover:-translate-y-1 cursor-pointer border border-transparent hover:border-primary-200">
-                  <div className={`w-12 h-12 rounded-xl ${category.color} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
-                    <category.icon className="h-6 w-6 text-[#33415] stroke-[1.5]" strokeWidth={1.5} />
+                <div className="group bg-white dark:bg-card rounded-xl p-5 shadow-sm hover:shadow-md transition-all hover:-translate-y-1 cursor-pointer border border-transparent hover:border-primary-200 dark:hover:border-primary-700">
+                  <div className={`w-12 h-12 rounded-xl ${category.color} dark:bg-card flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
+                    <category.icon className="h-6 w-6 text-neutral-700 dark:text-primary-400 stroke-[1.5]" strokeWidth={1.5} />
                   </div>
-                  <h3 className="font-semibold text-neutral-900 mb-1">
+                  <h3 className="font-semibold text-neutral-900 dark:text-foreground mb-1">
                     {category.label}
                   </h3>
-                  <p className="text-sm text-neutral-500">
+                  <p className="text-sm text-neutral-500 dark:text-muted-foreground">
                     {category.count} jobs
                   </p>
                 </div>
@@ -90,7 +90,7 @@ export default function PopularCategories() {
           transition={{ duration: 0.5, delay: 0.6 }}
         >
           <Link href="/jobs">
-            <button className="inline-flex items-center gap-2 text-primary-600 font-medium hover:text-primary-700 transition-colors">
+            <button className="inline-flex items-center gap-2 text-primary-600 dark:text-primary-400 font-medium hover:text-primary-700 dark:hover:text-primary-300 transition-colors">
               View All Categories
               <ArrowRight className="h-4 w-4" />
             </button>

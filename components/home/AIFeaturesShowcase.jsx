@@ -56,7 +56,7 @@ export default function AIFeaturesShowcase() {
   const isInView = useInView(ref, { once: true, amount: 0.1 })
 
   return (
-    <section className="py-20 bg-white" ref={ref}>
+    <section className="py-20 bg-white dark:bg-background" ref={ref}>
       <div className="container mx-auto px-4">
         {/* Section Header */}
         <motion.div
@@ -65,14 +65,14 @@ export default function AIFeaturesShowcase() {
           animate={isInView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.5 }}
         >
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary-100 rounded-full text-primary-700 text-sm font-medium mb-4">
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary-100 dark:bg-primary-950 rounded-full text-primary-700 dark:text-primary-300 text-sm font-medium mb-4">
             <Brain className="h-4 w-4" />
             AI-Powered Features
           </div>
-          <h2 className="text-3xl md:text-4xl font-bold text-neutral-900 mb-4">
+          <h2 className="text-3xl md:text-4xl font-bold text-neutral-900 dark:text-foreground mb-4">
             Supercharge Your Job Search with AI
           </h2>
-          <p className="text-lg text-neutral-600 max-w-2xl mx-auto">
+          <p className="text-lg text-neutral-600 dark:text-muted-foreground max-w-2xl mx-auto">
             Leverage cutting-edge AI technology to find the perfect job, optimize your resume, and ace your interviews.
           </p>
         </motion.div>
@@ -87,17 +87,17 @@ export default function AIFeaturesShowcase() {
               transition={{ duration: 0.5, delay: index * 0.1 }}
             >
               <Link href={feature.href}>
-                <div className="group h-full bg-neutral-50 rounded-2xl p-6 hover:bg-white hover:shadow-lg transition-all cursor-pointer border border-transparent hover:border-primary-200">
+                <div className="group h-full bg-neutral-50 dark:bg-card rounded-2xl p-6 hover:bg-white dark:hover:bg-secondary hover:shadow-lg dark:hover:shadow-xl transition-all cursor-pointer border border-transparent hover:border-primary-200 dark:hover:border-primary-700">
                   <div className={`${feature.color} w-14 h-14 rounded-xl flex items-center justify-center text-white mb-5 group-hover:scale-110 transition-transform`}>
                     <feature.icon className="h-7 w-7" />
                   </div>
-                  <h3 className="text-xl font-semibold text-neutral-900 mb-3">
+                  <h3 className="text-xl font-semibold text-neutral-900 dark:text-foreground mb-3">
                     {feature.title}
                   </h3>
-                  <p className="text-neutral-600 mb-4">
+                  <p className="text-neutral-600 dark:text-muted-foreground mb-4">
                     {feature.description}
                   </p>
-                  <div className="flex items-center gap-2 text-primary-600 font-medium group-hover:gap-3 transition-all">
+                  <div className="flex items-center gap-2 text-primary-600 dark:text-primary-400 font-medium group-hover:gap-3 transition-all">
                     Try Now
                     <ArrowRight className="h-4 w-4" />
                   </div>
