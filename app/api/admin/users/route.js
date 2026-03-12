@@ -9,7 +9,7 @@ async function checkAdminAccess(session, requireManageUsers = true) {
   }
 
   const user = await User.findById(session.user.id)
-  if (!user?.isAdmin || (user.role !== 'admin' && user.role !== 'superadmin')) {
+  if (!user || (user.role !== 'admin' && user.role !== 'superadmin')) {
     return { authorized: false, error: "Not authorized" }
   }
 
@@ -37,7 +37,7 @@ export async function GET(req) {
     const search = searchParams.get("search")
     const role = searchParams.get("role")
 
-    let query = { role: 'user' }
+    let query = {}
 
     if (search) {
       query.$or = [
@@ -46,7 +46,7 @@ export async function GET(req) {
       ]
     }
 
-    if (role && ['admin', 'superadmin'].includes(role)) {
+    if (role && ['user', 'admin', 'superadmin'].includes(role)) {
       query.role = role
     }
 
@@ -84,20 +84,64 @@ export async function PUT(req) {
     await connectDB()
 
     const body = await req.json()
-    const { userId, ...updateData } = body
+    const { userId, role, adminPermissions } = body
 
     if (!userId) {
       return Response.json({ error: "User ID is required" }, { status: 400 })
     }
 
     // Only superadmin can change roles
-    if (updateData.role && access.user.role !== 'superadmin') {
+    if (role && access.user.role !== 'superadmin') {
       return Response.json({ error: "Only superadmins can change user roles" }, { status: 403 })
+    }
+
+    // Prevent modifying yourself
+    if (userId === access.user._id.toString()) {
+      return Response.json({ error: "You cannot modify your own role" }, { status: 400 })
+    }
+
+    // Build update object with proper isAdmin sync
+    const updateData = {}
+
+    if (role) {
+      updateData.role = role
+
+      if (role === 'admin' || role === 'superadmin') {
+        // Promote: set isAdmin to true
+        updateData.isAdmin = true
+
+        // If adminPermissions are provided, use them; otherwise set defaults
+        if (adminPermissions) {
+          updateData.adminPermissions = adminPermissions
+        }
+
+        // Superadmins automatically get all permissions
+        if (role === 'superadmin') {
+          updateData.adminPermissions = {
+            canManageJobs: true,
+            canManagePosts: true,
+            canManageUsers: true,
+            canViewAnalytics: true
+          }
+        }
+      } else {
+        // Demote to regular user: clear admin status and permissions
+        updateData.isAdmin = false
+        updateData.adminPermissions = {
+          canManageJobs: false,
+          canManagePosts: false,
+          canManageUsers: false,
+          canViewAnalytics: false
+        }
+      }
+    } else if (adminPermissions) {
+      // If only permissions are being updated (no role change)
+      updateData.adminPermissions = adminPermissions
     }
 
     const user = await User.findByIdAndUpdate(
       userId,
-      { ...updateData },
+      updateData,
       { new: true, runValidators: true }
     ).select("-password")
 

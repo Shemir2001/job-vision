@@ -22,8 +22,13 @@ export default async function AdminLayout({ children }) {
     await connectDB()
     const user = await User.findById(session.user.id)
 
-    if (!user?.isAdmin || (user.role !== 'admin' && user.role !== 'superadmin')) {
+    if (!user || (user.role !== 'admin' && user.role !== 'superadmin')) {
       redirect('/')
+    }
+
+    // Auto-sync isAdmin flag if it's out of date
+    if (!user.isAdmin && (user.role === 'admin' || user.role === 'superadmin')) {
+      await User.findByIdAndUpdate(user._id, { isAdmin: true })
     }
   } catch (error) {
     console.error('Error checking admin status:', error)

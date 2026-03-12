@@ -23,7 +23,7 @@ export async function PATCH(request, { params }) {
 
     // Check admin access
     const user = await User.findById(session.user.id)
-    if (!user?.isAdmin && user?.role !== 'admin' && user?.role !== 'superadmin') {
+    if (!user || (user.role !== 'admin' && user.role !== 'superadmin')) {
       return NextResponse.json(
         { error: "Not authorized" },
         { status: 403 }

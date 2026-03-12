@@ -11,7 +11,7 @@ async function checkAdminAccess(session) {
   }
 
   const user = await User.findById(session.user.id)
-  if (!user?.isAdmin || user.role !== 'admin' && user.role !== 'superadmin') {
+  if (!user || (user.role !== 'admin' && user.role !== 'superadmin')) {
     return { authorized: false, error: "Not authorized" }
   }
 

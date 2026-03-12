@@ -22,7 +22,7 @@ export async function GET(request) {
     await connectDB()
     const user = await User.findById(session.user.id)
 
-    if (!user?.isAdmin && user?.role !== 'admin' && user?.role !== 'superadmin') {
+    if (!user || (user.role !== 'admin' && user.role !== 'superadmin')) {
       return NextResponse.json(
         { error: "Not authorized" },
         { status: 403 }
