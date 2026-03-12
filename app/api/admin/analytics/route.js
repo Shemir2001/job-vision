@@ -6,6 +6,7 @@ import Post from "@/lib/models/Post"
 import User from "@/lib/models/User"
 import JobImpression from "@/lib/models/JobImpression"
 import BlogImpression from "@/lib/models/BlogImpression"
+import Application from "@/lib/models/Application"
 
 async function checkAdminAccess(session) {
   if (!session?.user?.id) {
@@ -56,28 +57,30 @@ export async function GET(req) {
     const activeJobs = await Job.countDocuments({ source: 'manual', isActive: true })
     const featuredJobs = await Job.countDocuments({ source: 'manual', isFeatured: true })
 
-    const jobStats = await Job.aggregate([
-      { $match: { source: 'manual' } },
-      {
-        $group: {
-          _id: null,
-          totalApplications: { $sum: "$applications" }
-        }
-      }
-    ])
+    // Get all manual job IDs to filter impressions and applications
+    const manualJobIds = await Job.find({ source: 'manual' }).distinct('_id')
+    const manualJobIdStrings = manualJobIds.map(id => id.toString())
 
-    // Get total job views from JobImpression records (count unique users, not total impressions)
+    // Get total applications from Application collection for manual jobs
+    const totalApplicationsCount = await Application.countDocuments({
+      job: { $in: manualJobIds }
+    })
+
+    // Get total job views from JobImpression records for manual jobs only
     const jobViewsStats = await JobImpression.aggregate([
       {
         $match: {
           type: 'view',
-          user: { $ne: null } // Only count authenticated users
+          $or: [
+            { jobId: { $in: manualJobIds } },
+            { jobId: { $in: manualJobIdStrings } }
+          ]
         }
       },
       {
         $group: {
           _id: null,
-          totalViews: { $sum: 1 } // Count of view impressions
+          totalViews: { $sum: 1 }
         }
       }
     ])
@@ -213,11 +216,36 @@ export async function GET(req) {
       })
     }
 
-    // Get recent jobs (ONLY MANUALLY ADDED)
-    const recentJobs = await Job.find({ source: 'manual' })
+    // Get recent jobs (ONLY MANUALLY ADDED) with real views and applications
+    const recentJobDocs = await Job.find({ source: 'manual' })
       .sort({ createdAt: -1 })
       .limit(5)
-      .select("title company views applications")
+      .select("title company")
+      .lean()
+
+    // Fetch real views and applications for each recent job
+    const recentJobs = await Promise.all(
+      recentJobDocs.map(async (job) => {
+        const jobIdStr = job._id.toString()
+
+        // Get views from JobImpression collection
+        const viewCount = await JobImpression.countDocuments({
+          $or: [{ jobId: job._id }, { jobId: jobIdStr }],
+          type: 'view'
+        })
+
+        // Get applications from Application collection
+        const appCount = await Application.countDocuments({ job: job._id })
+
+        return {
+          _id: job._id,
+          title: job.title,
+          company: job.company,
+          views: viewCount,
+          applications: appCount
+        }
+      })
+    )
 
     // Get recent posts
     const recentPosts = await Post.find()
@@ -266,7 +294,7 @@ export async function GET(req) {
         active: activeJobs,
         featured: featuredJobs,
         totalViews: jobViewsStats[0]?.totalViews || 0,
-        totalApplications: jobStats[0]?.totalApplications || 0,
+        totalApplications: totalApplicationsCount,
         byCategory: jobsByCategory,
         byType: jobsByType,
         recent: recentJobs
