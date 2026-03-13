@@ -67,14 +67,21 @@ export default function CVAnalyzerPage() {
     setError('')
 
     // For demo, read as text if it's a text file
-    if (selectedFile.type === 'text/plain') {
-      const reader = new FileReader()
-      reader.onload = (e) => setText(e.target.result)
-      reader.readAsText(selectedFile)
-    } else {
-      // For PDF/DOC, you'd need server-side parsing
-      setText(`Resume content from: ${selectedFile.name}\n\nNote: For full PDF parsing, please paste your resume text below or use our server-side parsing.`)
-    }
+    // WITH THIS:
+try {
+  const { parseDocument, validateResumeText } = await import('@/lib/documentParser')
+  const extractedText = await parseDocument(selectedFile)
+  const validation = validateResumeText(extractedText)
+  
+  if (!validation.valid) {
+    setError(validation.error)
+    return
+  }
+  
+  setText(validation.text)
+} catch (err) {
+  setError(err.message || 'Failed to parse file. Please paste your resume text manually.')
+}
   }
 
   const handleAnalyze = async () => {

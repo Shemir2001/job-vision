@@ -359,36 +359,7 @@ export default function HeroSection() {
       </div>
 
       {/* CTA Buttons Section */}
-      <motion.div
-        className="relative z-20 bg-white dark:bg-neutral-900 py-6 sm:py-8 border-t dark:border-neutral-800"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.7, delay: 1.2 }}
-      >
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4 max-w-2xl mx-auto">
-            <Link href="/ai/cv-analyzer" className="w-full sm:w-auto">
-              <Button 
-                size="lg" 
-                variant="outline" 
-                className="w-full gap-2 h-11 sm:h-12 px-4 sm:px-6 text-sm sm:text-base font-semibold bg-white dark:bg-neutral-800 border-2 border-slate-300 dark:border-neutral-700 text-slate-700 dark:text-white hover:bg-slate-50 dark:hover:bg-neutral-700 hover:border-primary-400 rounded-md shadow-sm hover:shadow-md transition-all"
-              >
-                <Upload className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
-                <span>Upload CV for Free Analysis</span>
-              </Button>
-            </Link>
-            <Link href="/dashboard" className="w-full sm:w-auto">
-              <Button 
-                size="lg" 
-                className="w-full gap-2 h-11 sm:h-12 px-4 sm:px-6 text-sm sm:text-base font-semibold bg-primary-600 text-white hover:bg-primary-700 rounded-md shadow-md hover:shadow-lg transition-all"
-              >
-                <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
-                <span>Get AI Job Recommendations</span>
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </motion.div>
+     
     </section>
   )
 }
